@@ -36,7 +36,9 @@ services:
         condition: service_started
     build: ./poll-front
     container_name: poll-front
-    env_file: ./poll-front/.env
+    env_file: 
+      - ./poll-front/.env
+      - .env
     ports:
       - "${FRONT_PORT}:${FRONT_PORT}"
     restart: unless-stopped
