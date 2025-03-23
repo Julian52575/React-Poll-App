@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  poll-db:
+    build: ./poll-db
+    container_name: poll-db
+    env_file: "./poll-db/.env"
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - poll-back-to-db
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "$DB_PORT"]
+      interval: 5s
+      retries: 3
+      timeout: 10s
+ 
+  poll-back:
+    depends_on:
+      poll-db:
+        condition: service_healthy
+    build: ./poll-back
+    container_name: poll-back
+    env_file: ./poll-back/.env
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    networks:
+      - poll-front-to-back
+      - poll-back-to-db
+
+  poll-front:
+    depends_on:
+      poll-back:
+        condition: service_started
+    build: ./poll-front
+    container_name: poll-front
+    env_file: ./poll-front/.env
+    ports:
+      - "${FRONT_PORT}:${FRONT_PORT}"
+    restart: unless-stopped
+    networks:
+      - poll-front-to-back
+
+volumes:
+  mysql_data:
+networks:
+  poll-back-to-db:
+    internal: true #No outside connection to api / db
+  poll-front-to-back:
